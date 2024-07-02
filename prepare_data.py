@@ -95,7 +95,7 @@ def istft(spec_db, nfft, hoplen, win_len, phase=None, length=None, ref=1):
     signal = librosa.istft(spec, n_fft=nfft, hop_length=hoplen, win_length=win_len, length=length)
     return signal
 
-def create_spectrogram(load_path, index, test=False):
+def create_spectrogram(load_path, index, test=False, phase = 'Fetal'):
     if index > 0 and index < 10:
         str_index = '0' + str(index)
     else:
@@ -115,31 +115,16 @@ def create_spectrogram(load_path, index, test=False):
     fecg = shorten(fecg, sr, random_start)
     sum_ = shorten(sum_, sr, random_start)
     sum_noise, noise = add_noise(sum_, 4, 500, sum_.shape[1])
-    plt.figure(), plt.subplot(2,1,1), plt.plot(sum_noise[0,:])
-    plt.subplot(2,1,2), plt.plot(noise[0,:])
     nfft = 256
     win_len = 100
     hoplen = 15
     
     fecg_spec, fecg_phase, ref = stft(fecg, nfft=nfft, hoplen=hoplen, win_len=win_len)
     sum_noise_spec, sum_noise_phase, ref1 = stft(sum_noise, nfft=nfft, hoplen=hoplen, win_len=win_len)
-    # mecg_spec, mecg_phase, ref2 = stft(mecg, nfft=nfft, hoplen=hoplen, win_len=win_len)
 
     sum_noise_spec1 = scale_minmax(sum_noise_spec, 0, 255).astype(np.uint8) / 255
     fecg_spec1 = scale_minmax(fecg_spec, 0, 255).astype(np.uint8) / 255
-    # sum_noise_spec1 = sum_noise_spec / 80 + 1
-    # fecg_spec1 = fecg_spec / 80 + 1
-    plt.figure(), plt.imshow(sum_noise_spec1[0,:,:])
-    # extracted_spec = scale_minmax(fecg_spec1, -80, 0).astype(np.float32) #fecg_spec
-    # extracted_spec = (fecg_spec1 - 1) * 80
-    # signal = istft(extracted_spec, 256, 15, 100, fecg_phase, 2000, ref1)
+    if phase == 'Fetal':
+        return sum_noise_spec1, fecg_spec1, fecg_phase, ref1
     
-    # plt.figure(), plt.plot(signal[1, :]), plt.plot(fecg[1,:]*(signal[1,1]/fecg[1,1]),'r')
-    # plt.figure(), plt.subplot(4,1,1), plt.plot(fecg_phase[1, :, 15], "r")
-    # plt.subplot(4,1,2), plt.plot(sum_noise_phase[1,:, 15], 'b')
-    # plt.subplot(4,1,3), plt.plot(mecg_phase[1,:,15])
-    # plt.subplot(4,1,4), plt.plot(sum_noise_phase[1,:,15]-mecg_phase[1,:,15])
-
     return sum_noise_spec1, fecg_spec1, sum_noise_phase, ref1
-    
-create_spectrogram(r"D:/Iulia/ETTI/Licenta/Python UNet/ecg", 10)

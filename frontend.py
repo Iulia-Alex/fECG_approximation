@@ -1,59 +1,82 @@
 import customtkinter as ctk
+import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
 import numpy as np
+from unet_main import unet_main
+import os
+import re
 
-# Function to handle model selection and file loading
+# Handle model and file selection from frontend window
 def handle_selection():
     selected_model = model_var.get()
+    selected_phase = phase_var.get()
+    phase = selected_phase.split()[0]
+    selected_channel = channel_var.get()
+    channel = int(selected_channel.split()[1]) - 1
+    print(channel)
     file_path = filedialog.askopenfilename(title="Select a File")
     if file_path:
-        file_label.config(text=f"Selected File: {file_path}")
-        plot_signals()
+        file_label.configure(text=f"Selected File: {file_path}")
+        directory = os.path.dirname(file_path) + "/"
 
-# Function to plot two example signals
-def plot_signals():
-    # Generate example signals
-    x = np.linspace(0, 10, 1000)
-    signal1 = np.sin(x)
-    signal2 = np.cos(x)
+        # Get the basename
+        basename = os.path.basename(file_path)
+        basename_without_ext = os.path.splitext(basename)[0]
 
-    # Create a new window for plotting
-    plot_window = ctk.CTkToplevel()
-    plot_window.title("Plotted Signals")
-    
-    # Create the plot figure and axis
-    fig, ax = plt.subplots(2, 1, figsize=(10, 6))
-    ax[0].plot(x, signal1, label='Signal 1')
-    ax[0].legend()
-    ax[1].plot(x, signal2, label='Signal 2')
-    ax[1].legend()
+        # Extract the numeric suffix
+        match = re.search(r'(\d+)$', basename_without_ext)
+        if match:
+            numeric_suffix = match.group(1)
+        else:
+            numeric_suffix = ""
 
-    # Display the plot in the new window using Canvas
-    canvas = plt.FigureCanvasTkAgg(fig, master=plot_window)
-    canvas.draw()
-    canvas.get_tk_widget().pack()
+        hr, hr1, real_hr = unet_main(selected_model, directory, int(numeric_suffix), phase, channel)
 
-# Main window
+        # Update the HR labels
+        hr_label.configure(text=f"HR estimated value with first peak detector: {hr} bpm")
+        hr1_label.configure(text=f"HR estimated value with second peak detector: {hr1} bpm")
+        hrr_label.configure(text=f"Real HR value: {real_hr[0][0]} bpm")
+
 root = ctk.CTk()
-root.geometry('500x500')
-root.title("Fetal Heart Rate Approximation")
+root.geometry('600x600')
+root.title("Fetal Heart Rate Approximation - Iulia Alexandra Orvas")
 
-# Dropdown menu for model selection
+# Dropdown menus for model, phase and channel selection
 model_var = ctk.StringVar(value="UNet")
-model_label = ctk.CTkLabel(root, text="Select Model:")
+model_label = ctk.CTkLabel(root, text="Select model:")
 model_label.pack(pady=10)
 
 model_dropdown = ctk.CTkOptionMenu(root, variable=model_var, values=["UNet", "AttentionUnet"])
 model_dropdown.pack(pady=10)
 
-# Button to load file and plot signals
-load_button = ctk.CTkButton(root, text="Load File and Plot Signals", command=handle_selection)
+phase_var = ctk.StringVar(value="Fetal phase")
+phase_label = ctk.CTkLabel(root, text="Select which phase to use for reconstruction:")
+phase_label.pack(pady=10)
+
+phase_dropdown = ctk.CTkOptionMenu(root, variable=phase_var, values=["Fetal phase", "Mixture phase"])
+phase_dropdown.pack(pady=10)
+
+channel_var = ctk.StringVar(value="Channel 1")
+channel_label = ctk.CTkLabel(root, text="Select which channel to use:")
+channel_label.pack(pady=10)
+
+channel_dropdown = ctk.CTkOptionMenu(root, variable=channel_var, values=["Channel 1", "Channel 2", "Channel 3", "Channel 4"])
+channel_dropdown.pack(pady=10)
+
+load_button = ctk.CTkButton(root, text="Load file and plot signals", command=handle_selection)
 load_button.pack(pady=20)
 
-# Label to display the selected file
-file_label = ctk.CTkLabel(root, text="Selected File: None")
+file_label = ctk.CTkLabel(root, text="Selected file: None")
 file_label.pack(pady=10)
 
-# Run the main loop
+hrr_label = ctk.CTkLabel(root, text="Real HR value: ")
+hrr_label.pack(pady=10)
+
+hr_label = ctk.CTkLabel(root, text="HR estimated value with first peak detector: ")
+hr_label.pack(pady=10)
+
+hr1_label = ctk.CTkLabel(root, text="HR estimated value with second peak detector: ")
+hr1_label.pack(pady=10)
+
 root.mainloop()

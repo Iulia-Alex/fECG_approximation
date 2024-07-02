@@ -20,7 +20,7 @@ class SpectrogramDataset(Dataset):
         
     def __getitem__(self, idx):
         current_mat = self.files[idx]
-        ### procesare, scoate spect
+        # Spectrogram computing
         current_dir = os.path.dirname(os.path.abspath(__file__))
         data_path = os.path.join(current_dir, "ecg")
         spect_dir = os.path.join(current_dir, "data/processed/spectrogram")
