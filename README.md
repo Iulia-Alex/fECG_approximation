@@ -1,4 +1,4 @@
-# fECG_approximation
+# fHR_approximation
 
 # ECG Time-Reversal Inference Tool
 
